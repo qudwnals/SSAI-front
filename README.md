@@ -1,48 +1,85 @@
+# SSAI Frontend
 
-  # CCTV 관리자 대시보드
+React, TypeScript, Vite 기반의 CCTV 안전 관제 대시보드입니다. 개인 사용자와 기업 사용자가 시설·카메라를 관리하고, AI 위험 이벤트와 카메라 상태를 웹과 Android 앱에서 확인할 수 있습니다.
 
-  This is a code bundle for CCTV 관리자 대시보드. The original project is available at https://www.figma.com/design/FXYF8x29t0JGy3BWTlUhVl/CCTV-%EA%B4%80%EB%A6%AC%EC%9E%90-%EB%8C%80%EC%8B%9C%EB%B3%B4%EB%93%9C.
+## 주요 기능
 
-  ## Running the code
+- 개인·기업 로그인과 회원가입
+- SMS 인증, 비밀번호 재설정, 약관 동의 화면
+- Access Token 메모리 관리와 세션 복구
+- 시설·기업·카메라 목록 및 관리
+- 카메라별 위험구역 ROI 설정 화면
+- WebRTC, HLS, AI 오버레이 MJPEG 스트림 지원
+- 카메라별 스트림 fallback과 stale 상태 처리
+- STOMP 기반 위험 알림·카메라 상태·오버레이 구독
+- 이벤트 ID 기반 알림 중복 제거와 최근 알림 관리
+- 미확인 위험 알림 반복음과 확인(acknowledge) 처리
+- 위험 이벤트 상세 화면과 카메라 포커스 이동
+- Android Capacitor 앱과 FCM 백그라운드 푸시
+- 푸시 알림 클릭 시 이벤트 상세 화면 이동
+- VLM·시맨틱 검색 연동 화면과 이벤트 기록 기능
 
-  Run `npm i` to install the dependencies.
+## 실시간 통신
 
-  Run `npm run dev` to start the development server.
+```text
+Spring Boot
+  -> STOMP over WebSocket
+  -> 시설·기업별 topic
+  -> React alert feed / camera status / overlay store
+```
 
-  ## Stream modes
-  
-  The monitoring dashboard supports raw MediaMTX HLS, WebRTC WHEP, and AI overlay MJPEG.
-  
-  ```env
-  VITE_STREAM_MODE=mjpeg
-  VITE_WEBRTC_BASE_URL=http://localhost:8889
-  VITE_HLS_BASE_URL=http://localhost:8888
-  VITE_MJPEG_BASE_URL=http://localhost:8010
-  VITE_STREAM_FALLBACK_ENABLED=true
-  ```
-  
-  - `webrtc`: Uses MediaMTX WebRTC WHEP at `${VITE_WEBRTC_BASE_URL}/{cameraLoginId}/whep`.
-  - `raw`: Uses MediaMTX HLS at `${VITE_HLS_BASE_URL}/{cameraLoginId}/index.m3u8`.
-  - `mjpeg`: Uses direct AI MJPEG at dynamic per-camera ports calculated from `VITE_MJPEG_BASE_URL` (e.g. cam_01=8010, cam_02=8011) or a proxy URL if `VITE_MJPEG_PROXY_MODE=true` is set.
-  - `overlay`: Kept for backwards compatibility.
-  
-  ### Option A: Direct GPU PC Connection
-  If you are not using SSH tunnels, point the base URLs directly to the GPU PC IP (e.g. `192.168.0.66`):
-  ```env
-  VITE_WEBRTC_BASE_URL=http://192.168.0.66:8889
-  VITE_HLS_BASE_URL=http://192.168.0.66:8888
-  ```
-  
-  ### Option B: SSH Local Port Forwarding
-  When developing from a local machine through an SSH tunnel, you can keep the base URLs as `localhost`. Make sure to run the following forwarding command:
-  ```bash
-  ssh -L 8888:127.0.0.1:8888 -L 8889:127.0.0.1:8889 -L 8189:127.0.0.1:8189 welabs@192.168.0.66
-  ```
+프론트는 STOMP 연결 재연결, 이벤트 파싱, timestamp 기반 오버레이 동기화와 stale 이벤트 제거를 처리합니다. 코드에는 SSE EventSource 호환 경로도 있지만, 현재 백엔드의 주요 실시간 알림은 STOMP WebSocket을 사용합니다.
 
-  ## AI alert routing
+## 스트림 모드
 
-  Active AI danger alerts are routed only to the personal/user and company/business monitoring dashboard. The admin dashboard does not subscribe to the AI SSE event stream and does not play alarm sounds.
+```dotenv
+VITE_STREAM_MODE=mjpeg
+VITE_WEBRTC_BASE_URL=http://localhost:8889
+VITE_HLS_BASE_URL=http://localhost:8888
+VITE_MJPEG_BASE_URL=http://localhost:8010
+VITE_STREAM_FALLBACK_ENABLED=true
+```
 
-  When a danger event is unacknowledged, the monitoring dashboard repeats an alarm every 2 seconds. Clicking an alert card or Confirm focuses the related camera, and Confirm marks that event as acknowledged so the alarm stops once all current danger alerts are confirmed.
+- `webrtc`: MediaMTX WebRTC WHEP
+- `raw`: MediaMTX HLS
+- `mjpeg`: 카메라별 AI 오버레이 MJPEG
+- 스트림 장애나 stale 상태 발생 시 설정된 fallback 경로 사용
 
-  Confirm also sends `POST /api/incidents/{eventId}/acknowledge-and-record` to the backend with `preFrames=150`, `postFrames=150`, and `totalFrames=300`. The backend records the request as `RECORDING_REQUESTED`; actual AI clip capture is still a later service contract.
+## 실행
+
+```bash
+npm install
+npm run dev
+```
+
+타입 검사와 빌드:
+
+```bash
+npm run typecheck
+npm run build
+```
+
+Android 개발:
+
+```bash
+npm run android:sync
+npm run android:open
+```
+
+운영 환경에서는 API와 스트림을 HTTPS/WSS로 제공하고, 개발용 mixed content 설정을 제거해야 합니다.
+
+## 담당 개발 내용
+
+- 개인·기업 로그인·회원가입 화면과 API 연동
+- SMS 인증·약관 동의·비밀번호 재설정 UX
+- 시설·카메라·ROI 설정 화면과 API 연결
+- STOMP 실시간 이벤트·카메라 상태·오버레이 구독
+- 이벤트 파싱, 중복 제거, stale 이벤트 정리와 알림음
+- 위험 알림 확인 및 이벤트 상세·카메라 포커스 처리
+- WebRTC/HLS/MJPEG 스트림 fallback과 오버레이 동기화
+- Capacitor Android 앱과 FCM 기기 등록·푸시 클릭 처리
+
+## 관련 저장소
+
+- [SSAI-ai](https://github.com/qudwnals/SSAI-ai)
+- [SSAI-back](https://github.com/qudwnals/SSAI-back)
