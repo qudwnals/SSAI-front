@@ -2,6 +2,19 @@
 
 React, TypeScript, Vite 기반의 CCTV 안전 관제 대시보드입니다. 개인 사용자와 기업 사용자가 시설·카메라를 관리하고, AI 위험 이벤트와 카메라 상태를 웹과 Android 앱에서 확인할 수 있습니다.
 
+## 화면 미리보기
+
+<p align="center">
+  <a href="https://www.youtube.com/watch?v=O1-JNhcpvDQ">
+    <img width="100%" alt="스마트 안전 관제 시스템 시연 영상" src="https://img.youtube.com/vi/O1-JNhcpvDQ/maxresdefault.jpg" />
+  </a>
+</p>
+
+![실시간 AI 관제 및 사고 영상 검색](https://raw.githubusercontent.com/strangeRookies/.github/main/profile/assets/dashboard-and-search.jpg)
+![사고 전후 이벤트 영상 재생](https://raw.githubusercontent.com/strangeRookies/.github/main/profile/assets/event-playback.jpg)
+
+> 화면 이미지는 [strangeRookies 프로젝트 통합 자료](https://github.com/strangeRookies/.github/blob/main/profile/README.md)에서 재사용했습니다.
+
 ## 주요 기능
 
 - 개인·기업 로그인과 회원가입
